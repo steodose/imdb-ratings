@@ -1,11 +1,15 @@
 ##### Get IMDB Series Data #####
 
+# This script fetches the IMDB urls in the series_urls.csv, returns ratings for those shows, and writes a csv to the working directory
+
 library(tidyverse)
 library(futile.logger)
 
+# 1000+ titles takes ~30 minutes to run
+
 source("R/imdb_series.R")
 
-series_to_fetch = read_csv("series_urls.csv")
+series_to_fetch <- read_csv("series_urls.csv")
 
 for(i in seq(1, NROW(series_to_fetch), by = 4)){
     output_file = paste0("data/series_from_imdb-", i, ".csv")
@@ -24,9 +28,9 @@ for(i in seq(1, NROW(series_to_fetch), by = 4)){
 files = list.files("./data/", "^series_from_imdb-", full.names = TRUE)
 there_should_be = ceiling(NROW(series_to_fetch) / 4)
 if(length(files) != there_should_be){
-    message("Not all series were fetch. There should be ", there_should_be, " files, but there are ", length(files))
+    message("Not all series were fetched. There should be ", there_should_be, " files, but there are ", length(files))
 } else {
-    all_data = tibble(file = files) %>% 
+    all_data <- tibble(file = files) %>% 
         group_by(file) %>% 
         do(read_csv(.$file, 
                     col_types = cols(    

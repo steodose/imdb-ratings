@@ -78,7 +78,7 @@ Inputs {.sidebar}
 
 ```
 
-TV series and ratings data for 800+ shows in the IMDb database. 
+TV series and ratings data for 1000+ shows in the IMDb database. 
 
 IMDb registered users can cast a vote (from 1 to 10) on every released title in the database. Individual votes are then aggregated and summarized as a single IMDb rating, visible on the title's main page.
 
@@ -231,7 +231,7 @@ Row {.tabset}
 
  renderPlot({
 ggplot(boxplot(), aes(season, user_rating, group = season)) + 
-    geom_boxplot() +
+    geom_boxplot(color = "#F5C518", fill="#F5C518", alpha=0.2) +
     scale_x_continuous(breaks = 1:9) +
     theme_custom() +
     labs(x = "Season", y = "Average User Rating",
