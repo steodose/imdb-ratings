@@ -78,10 +78,11 @@ Inputs {.sidebar}
 
 ```
 
-TV series and ratings data for 800+ shows in the IMDB database. 
+TV series and ratings data for 800+ shows in the IMDb database. 
+
+IMDb registered users can cast a vote (from 1 to 10) on every released title in the database. Individual votes are then aggregated and summarized as a single IMDb rating, visible on the title's main page.
 
 Inspiration: https://vallandingham.me/seriesheat/#/?flip=1&id=tt0098904
-
 
 
 Row
