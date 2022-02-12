@@ -1,10 +1,8 @@
-# imdb-ratings
-IMDB Ratings Tool Repo
+# IMDb Ratings for TV/Streaming Series
 
-MDB Ratings for TV/Streaming Series
-A dataset of IMDb ratings for episodes of popular TV and Streaming series.
+This is the repository for my IMDB Ratings Dashboard Tool. The code to scrape IMDb's website (politely) and generate the dataset was borrowed from [Nazareno Andrade](https://github.com/nazareno/imdb-series#imdb-ratings-for-tvstreaming-series).
 
-Each line in the dtaset is an episode from a series from a handcrafted list of series. The variables are as follows:
+A dataset of IMDb ratings for episodes of popular TV and Streaming series is outputted with this code. Each record in the dataset is an episode from a series from a curated list of series.  The variables are as follows:
 
 * series_name <chr> Self explanatory
 * series_ep   <int> Episode index in the series from 1 onwards.
