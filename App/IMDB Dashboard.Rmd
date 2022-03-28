@@ -1,0 +1,492 @@
+---
+title: "IMDB Show Ratings"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    theme: cosmo
+    logo: logo.png
+    social: [ "twitter", "linkedin", "menu" ]
+    css: www/custom.css
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+library(htmlwidgets)
+library(crosstalk)
+library(DT)
+library(magick)
+library(rvest) # for webscraping
+library(httr)
+library(polite)
+library(gt) 
+library(gtExtras)
+library(glue)
+library(ggtext)
+library(rlang)
+library(RCurl)
+library(ggimage) #for working with logos
+library(zoo)
+library(janitor)
+library(prismatic)
+library(patchwork)
+library(ggsci)
+library(viridis)
+library(rsvg)
+```
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+
+# Load imdb data from following GitHub url. Alternatively could scrape using rvest.
+url <- getURL("https://raw.githubusercontent.com/nazareno/imdb-series/master/data/series_from_imdb.csv")
+
+imdb <- read_csv(url)
+
+
+# Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
+theme_custom <- function () { 
+    theme_minimal(base_size=11, base_family="Chivo") %+replace% 
+        theme(
+            panel.grid.minor = element_blank(),
+            plot.background = element_rect(fill = 'transparent', color = "transparent")
+        )
+}
+
+# Define an aspect ratio to use throughout. This value is the golden ratio which provides a wider than tall rectangle
+asp_ratio <- 1.618 
+
+# Define colors
+season_color <- "#F5C518"
+episodes_color <- "#F5C518"
+avg_ratings_color <- "#F5C518"
+total_votes_color <- "#F5C518"
+
+# Define color palette to use in tables
+my_color_pal <- c("#ffffff", "#f2fbd2", "#c9ecb4", "#93d3ab", "#35b0ab")
+temppal <- c("#36a1d6", "#76b8de", "#a0bfd9", "#ffffff", "#d88359", "#d65440", "#c62c34")
+
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+ selectInput("seriesInput", label = h3("Select Show"), 
+    choices = unique(imdb$series_name), 
+    selected="Seinfeld", multiple = FALSE)
+
+```
+
+TV series and ratings data for 1000+ shows in the IMDb database. 
+
+
+Inspiration for this app comes from: https://vallandingham.me/seriesheat/#/?flip=1&id=tt0098904
+
+
+Row
+-----------------------------------------------------------------------
+
+### season {.value-box}
+
+```{css}
+
+.value-output {
+  color: red;
+}
+
+.caption {
+  color: yellow;
+}
+
+```
+
+
+```{r}
+
+total_seasons <- reactive({
+  imdb %>% 
+  filter(series_name == input$seriesInput) %>% 
+  summarise(Season =max(season))
+})
+
+# Put valueBox() inside renderValueBox({})
+renderValueBox({
+  valueBox(value = total_seasons(), 
+           caption = "Total Seasons",
+           color = "black",
+           icon = "fa-tv")
+})
+
+```
+
+
+### episodes {.value-box}
+
+```{r}
+total_episodes <- reactive({
+  imdb %>% 
+  filter(series_name == input$seriesInput) %>% 
+  summarise(Episodes =max(series_ep))
+})
+
+# Put valueBox() inside renderValueBox({})
+renderValueBox({
+  valueBox(value = total_episodes(), 
+           caption = "Total Episodes",
+           color = "black",
+           icon = "fa-tv-retro")
+})
+```
+
+
+### total votes {.value-box}
+
+```{r}
+
+total_votes <- reactive({
+  imdb %>% 
+  filter(series_name == input$seriesInput) %>% 
+  summarise(Episodes = format(sum(user_votes), big.mark = ","))
+})
+
+# Put valueBox() inside renderValueBox({})
+renderValueBox({
+  valueBox(value = total_votes(), 
+           caption = "Total Votes",
+           color = "black",
+           icon = "fa-comment")
+})
+```
+
+### average rating {.value-box}
+
+```{r}
+
+avg_rating <- reactive({
+  imdb %>% 
+  filter(series_name == input$seriesInput) %>% 
+  summarise(AvgRating = format(mean(user_rating), digits = 2))
+})
+
+# Put valueBox() inside renderValueBox({})
+renderValueBox({
+  valueBox(value = paste(avg_rating(),"/10", sep = ""), 
+           caption = "Average Rating",
+           color = "black",
+           icon = "fa-thumbs-up")
+})
+
+```
+
+
+### rating rankings {.value-box}
+
+```{r}
+
+imdb_rankings <- imdb %>% 
+    group_by(series_name) %>% 
+    summarise(avg_show_rating = mean(user_rating)) %>% 
+    arrange(desc(avg_show_rating)) %>%
+    mutate(rank = row_number()) %>% 
+    relocate(rank)
+
+rating_rank <- reactive({
+  imdb_rankings %>% 
+  filter(series_name == input$seriesInput) %>% 
+  pull(rank)
+})
+
+# Put valueBox() inside renderValueBox({})
+renderValueBox({
+  valueBox(value = paste(rating_rank(),"/1000", sep = ""), 
+           caption = "Ratings Ranking",
+           color = "black",
+           icon = "fa-thumbs-up")
+})
+
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Series Heatmap
+    
+```{r}
+
+ heatmap_plot <- reactive({
+        imdb %>%
+            filter(series_name == input$seriesInput
+            )
+    })
+
+ renderPlot({
+     ggplot(heatmap_plot(), aes(season_ep, season, fill = user_rating)) +
+     geom_tile() +
+        # scale_fill_material("deep-orange", 
+         #               labels = scales::percent_format()) +
+     scale_fill_viridis(discrete = FALSE) + 
+         geom_text(aes(label = user_rating), family = "Chivo") +
+         theme_custom() +
+         theme(plot.title = element_text(face = "bold", size = 20)) +
+         theme(legend.position = "false") +
+         theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()) +
+         labs(x = "Episode",
+         y = "Season",
+         subtitle = "Average user rating for each episode and season.",
+         title = "IMDB User Ratings",
+         caption = "Data: IMDD.com | Plot: @steodosescu")
+     
+ })
+```
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Ratings Boxplot
+    
+```{r}
+
+ boxplot <- reactive({
+        imdb %>%
+            filter(series_name == input$seriesInput
+            )
+    })
+
+
+ renderPlot({
+ggplot(boxplot(), aes(season, user_rating, group = season)) + 
+    geom_boxplot(color = "#F5C518", fill="#F5C518", alpha=0.2) +
+    scale_x_continuous(breaks = 1:9) +
+    theme_custom() +
+    labs(x = "Season", y = "Average User Rating",
+         title = "IMDB Ratings Distribution",
+         subtitle = "Average user ratings for all seasons of the selected show.",
+         caption = "Data: IMDB.com") +
+    theme(plot.title = element_text(face = "bold", size = 20))
+ })
+
+```
+   
+### Best Rated Episodes
+
+```{r}
+
+#Order table by best to worst episode
+
+gt_table <- reactive({
+  imdb %>%
+    rename(link = url) %>% 
+    select(series_name:user_votes, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1) %>% 
+    filter(series_name == input$seriesInput) %>%
+      mutate(
+      link = map(link, ~ htmltools::a(href = .x, "Episode Website")),
+        link = map(link, ~ gt::html(as.character(.x)))) %>%
+    arrange(desc(user_rating))
+    })
+
+render_gt(
+  gt(gt_table()) %>% 
+  cols_label(series_name = "Series",
+               episode = "Episode",
+               series_ep = "Series Episode",
+             season = "Season",
+             season_ep = "Season Episode",
+             link = "Link",
+             user_rating = "User Rating",
+             user_votes = "User Votes") %>% 
+    tab_header(
+        title = md("**Top Episodes**"), 
+        subtitle = "Episodes ranked by average IMDB user rating."
+    )  %>% 
+    fmt_percent(
+        columns = vars(r1:r10),
+        decimals = 1
+    )  %>%
+    tab_spanner(
+    label = "User rating share from 1 to 10",
+    columns = c(9:18)
+  ) %>%
+    data_color(
+        columns = vars(user_rating),
+        colors = scales::col_numeric(
+            palette = paletteer::paletteer_d(
+                palette = "ggsci::amber_material",
+                direction  = 1
+            ) %>% as.character(),
+            domain = c(0, 1), 
+            na.color = "#00441BFF"
+        )
+    ) %>%
+    tab_options(
+        column_labels.background.color = "white",
+        table.border.top.width = px(3),
+        table.border.top.color = "white",
+        table.border.bottom.color = "white",
+        table.border.bottom.width = px(3),
+        column_labels.border.top.width = px(3),
+        column_labels.border.top.color = "white",
+        column_labels.border.bottom.width = px(3),
+        column_labels.border.bottom.color = "black",
+        data_row.padding = px(3),
+        source_notes.font.size = 12,
+        table.font.size = 16,
+        heading.align = "left"
+    )  %>%
+    tab_source_note(
+        source_note = md("Table: @steodosescu | Data: IMDB.com")
+    )
+)
+
+
+```
+
+
+### Episodes Ranked
+
+```{r}
+
+## Order table by best to worst episode using Reactable
+
+# create function for Ratings Stars to include in the table
+
+rating_stars <- function(rating, max_rating = 10) {
+  star_icon <- function(empty = FALSE) {
+    tagAppendAttributes(shiny::icon("star"),
+      style = paste("color:", if (empty) "#edf0f2" else "orange"),
+      "aria-hidden" = "true"
+    )
+  }
+  rounded_rating <- floor(rating + 0.5)  # always round up
+  stars <- lapply(seq_len(max_rating), function(i) {
+    if (i <= rounded_rating) star_icon() else star_icon(empty = TRUE)
+  })
+  label <- sprintf("%s out of %s stars", rating, max_rating)
+  div(title = label, role = "img", stars)
+}
+
+
+episode_table <- reactive({
+  imdb %>%
+    rename(link = url) %>% 
+    select(series_name:user_votes, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1) %>% 
+    filter(series_name == input$seriesInput) %>%
+      mutate(
+      link = map(link, ~ htmltools::a(href = .x, "Episode Website")),
+        link = map(link, ~ gt::html(as.character(.x)))) %>%
+    arrange(desc(user_rating))
+    })
+
+
+renderReactable({
+        reactable(episode_table(),
+                  columnGroups = list(
+                      colGroup(name = "Proportion of Votes", 
+                               columns = c(9:18)),
+                  ),
+                  showSortIcon = TRUE,
+                  language = reactableLang(
+                      searchPlaceholder = "Search for an episode..."),
+                  defaultPageSize = 100,
+                  columns = list(
+                      series_name = colDef(name = "Series",
+                                    minWidth = 120,
+                                    align = "left"),
+                      episode = colDef(name = "Episode",
+                                      align = "right",
+                                      style = color_scales(imbd, colors = my_color_pal),
+                                      format =  colFormat(digits = 0)),
+                      series_ep = colDef(name = "Series Episode",
+                                                   align = "right",
+                                                   format =  colFormat(digits = 0)),
+                      season = colDef(name = "Season",
+                                                   align = "right",
+                                              style = list(borderRight = "2px solid #555"),
+                                              format =  colFormat(digits = 1)),
+                      season_ep = colDef(name = "Season Episode",
+                                                align = "right",
+                                                format =  colFormat(digits = 1)),
+                      link = colDef(name = "Episode Link",
+                                     align = "right"),
+                      user_rating = colDef(name = "Rating",
+                                            align = "right",
+                                            style = color_scales(imdb, colors = paletteer::paletteer_d(
+                                                palette = "ggsci::amber_material"
+                                            )),
+                                            format =  colFormat(percent = TRUE)),
+                      user_votes = colDef(name = "Votes",
+                                                    align = "right",
+                                                    style = color_scales(imbd, paletteer::paletteer_d(
+                                                        palette = "ggsci::amber_material"
+                                                    )),
+                                                    format =  colFormat(percent = TRUE)),
+                      r10 = colDef(name = "R10",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r9 = colDef(name = "R9",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r8 = colDef(name = "R8",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r7 = colDef(name = "R7",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r6 = colDef(name = "R6",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r5 = colDef(name = "R5",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r4 = colDef(name = "R4",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r3 = colDef(name = "R3",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r2 = colDef(name = "R2",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      r1 = colDef(name = "R1",
+                                            align = "center",
+                                            format =  colFormat(percent = TRUE)),
+                      ),
+                  pagination = FALSE,
+                  compact = TRUE, 
+                  sortable = TRUE,
+                  borderless = FALSE, 
+                  striped = FALSE,
+                  fullWidth = FALSE, 
+                  defaultColDef = colDef(align = "center", minWidth = 95)
+                  )
+    })
+
+
+```
+
+### About
+
+**IMDB Ratings Dashboard Tool**
+
+This dashboard was built to visualize and quickly obtain ratings and information on myriad shows available in the Internet Movie Database (IMDb). IMDb registered users can cast a vote (from 1 to 10) on every released title in the database. Individual votes are then aggregated and summarized as a single IMDb rating, visible on the title's main page. Released title means that the movie (or TV show) must have been shown publicly at least once (including festival screening).
+
+Users can update their votes as often as they'd like, but any new vote on the same title will overwrite the previous one, so it is one vote per title per user. 
+
+
+**Data**
+
+This dashboard is built with R using the [Rmarkdown](https://rmarkdown.rstudio.com/) and [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/) frameworks. The code behind the dashboard is made available [here](https://github.com/steodose/imdb-ratings/tree/master)
+
+The input data for this IMDb Ratings Dashboard Tool can also be found in my [GitHub repository](https://github.com/steodose/imdb-ratings). The code to scrape IMDb's website (politely) and generate the dataset was borrowed from [Nazareno Andrade](https://github.com/nazareno/imdb-series#imdb-ratings-for-tvstreaming-series).
+
+For any questions or feedback, you can contact me on
+[Twitter](https://twitter.com/steodosescu).
