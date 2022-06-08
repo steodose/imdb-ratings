@@ -2,7 +2,6 @@
 
 This is the repository for my IMDB Ratings Dashboard Tool. 
 
-## Modeling and Simulation for the 2022 FIFA World Cup in Qatar
 * get_series_data.R: Poission regression model to predict and simulate the 2022 Men's FIFA World Cup
 * series_urls.csv: Data for intertional soccer matches dating back to 1872.
 * imdb_series.R: Fixtures and results for matches played in the 2022 FIFA World Cup
