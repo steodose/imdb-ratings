@@ -1,0 +1,13 @@
+name: IMDB-Ratings-Tool
+title: IMDB-Ratings-Tool
+username:
+account: steodosescu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5953849
+bundleId: 5988026
+url: https://steodosescu.shinyapps.io/IMDB-Ratings-Tool/
+when: 1654665583.70282
+lastSyncTime: 1654665583.70285
+asMultiple: FALSE
+asStatic: FALSE

@@ -5,11 +5,28 @@ output:
     orientation: rows
     vertical_layout: scroll
     theme: cosmo
-    logo: logo.png
+    logo: favicon-imdb_48x48.png
+    favicon: favicon-imdb_48x48.png
     social: [ "twitter", "linkedin", "menu" ]
-    css: www/custom.css
 runtime: shiny
 ---
+
+<style>                     
+.navbar {
+  background-color:#000000;
+  border-color:white;
+}
+.navbar-brand {
+color:white!important;
+}
+</style>   
+
+<style type="text/css">
+
+.chart-title {  /* chart_title  */
+   font-size: 15px
+
+</style>
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
@@ -39,7 +56,12 @@ library(patchwork)
 library(ggsci)
 library(viridis)
 library(rsvg)
+library(plotly)
+library(scales)
+library(bslib)
 ```
+
+
 
 ```{r global, include=FALSE}
 # load data in 'global' chunk so it can be shared by all users of the dashboard
@@ -52,7 +74,7 @@ imdb <- read_csv(url)
 
 # Custom ggplot theme (inspired by Owen Phillips at the F5 substack blog)
 theme_custom <- function () { 
-    theme_minimal(base_size=11, base_family="Chivo") %+replace% 
+    theme_minimal(base_size=11, base_family="Amazon Ember") %+replace% 
         theme(
             panel.grid.minor = element_blank(),
             plot.background = element_rect(fill = 'transparent', color = "transparent")
@@ -84,10 +106,8 @@ Inputs {.sidebar}
 
 ```
 
-TV series and ratings data for 1000+ shows in the IMDb database. 
+TV series and ratings data for 1000+ shows in the IMDb database. Select a series above and see the ratings for each episode.
 
-
-Inspiration for this app comes from: https://vallandingham.me/seriesheat/#/?flip=1&id=tt0098904
 
 
 Row
@@ -120,7 +140,7 @@ total_seasons <- reactive({
 renderValueBox({
   valueBox(value = total_seasons(), 
            caption = "Total Seasons",
-           color = "black",
+           color = "#579EEA",
            icon = "fa-tv")
 })
 
@@ -140,8 +160,8 @@ total_episodes <- reactive({
 renderValueBox({
   valueBox(value = total_episodes(), 
            caption = "Total Episodes",
-           color = "black",
-           icon = "fa-tv-retro")
+           color = "#579EEA",
+           icon = "fa-film")
 })
 ```
 
@@ -160,7 +180,7 @@ total_votes <- reactive({
 renderValueBox({
   valueBox(value = total_votes(), 
            caption = "Total Votes",
-           color = "black",
+           color = "#579EEA",
            icon = "fa-comment")
 })
 ```
@@ -179,8 +199,8 @@ avg_rating <- reactive({
 renderValueBox({
   valueBox(value = paste(avg_rating(),"/10", sep = ""), 
            caption = "Average Rating",
-           color = "black",
-           icon = "fa-thumbs-up")
+           color = "#579EEA",
+           icon = "fa-star")
 })
 
 ```
@@ -207,7 +227,7 @@ rating_rank <- reactive({
 renderValueBox({
   valueBox(value = paste(rating_rank(),"/1000", sep = ""), 
            caption = "Ratings Ranking",
-           color = "black",
+           color = "#579EEA",
            icon = "fa-thumbs-up")
 })
 
@@ -227,13 +247,15 @@ Row
             )
     })
 
- renderPlot({
-     ggplot(heatmap_plot(), aes(season_ep, season, fill = user_rating)) +
+ renderPlotly({
+     ggplotly(ggplot(heatmap_plot(), tooltip = "episode", aes(season_ep, season, fill = user_rating)) +
      geom_tile() +
         # scale_fill_material("deep-orange", 
          #               labels = scales::percent_format()) +
-     scale_fill_viridis(discrete = FALSE) + 
-         geom_text(aes(label = user_rating), family = "Chivo") +
+     scale_fill_viridis(discrete = FALSE, direction = -1) + 
+       scale_y_continuous(labels = scales::label_number(accuracy = 1), 
+                          breaks = scales::pretty_breaks()) +
+         geom_text(aes(label = user_rating), family = "Amazon Ember", color = "white") +
          theme_custom() +
          theme(plot.title = element_text(face = "bold", size = 20)) +
          theme(legend.position = "false") +
@@ -243,8 +265,8 @@ Row
          y = "Season",
          subtitle = "Average user rating for each episode and season.",
          title = "IMDB User Ratings",
-         caption = "Data: IMDD.com | Plot: @steodosescu")
-     
+         caption = "Data: IMDB.com | Plot: @steodosescu")
+     )
  })
 ```
 
@@ -263,8 +285,8 @@ Row {.tabset}
     })
 
 
- renderPlot({
-ggplot(boxplot(), aes(season, user_rating, group = season)) + 
+ renderPlotly({
+ggplotly(ggplot(boxplot(), aes(season, user_rating, group = season)) + 
     geom_boxplot(color = "#F5C518", fill="#F5C518", alpha=0.2) +
     scale_x_continuous(breaks = 1:9) +
     theme_custom() +
@@ -273,7 +295,9 @@ ggplot(boxplot(), aes(season, user_rating, group = season)) +
          subtitle = "Average user ratings for all seasons of the selected show.",
          caption = "Data: IMDB.com") +
     theme(plot.title = element_text(face = "bold", size = 20))
+)
  })
+ 
 
 ```
    
@@ -473,13 +497,22 @@ renderReactable({
 
 ```
 
+
+```{css}
+.chart-wrapper {
+  overflow-x: scroll;
+}
+```
+
 ### About
 
 **IMDB Ratings Dashboard Tool**
 
-This dashboard was built to visualize and quickly obtain ratings and information on myriad shows available in the Internet Movie Database (IMDb). IMDb registered users can cast a vote (from 1 to 10) on every released title in the database. Individual votes are then aggregated and summarized as a single IMDb rating, visible on the title's main page. Released title means that the movie (or TV show) must have been shown publicly at least once (including festival screening).
+This dashboard was built to visualize ratings and information on myriad shows available in the Internet Movie Database (IMDb). App created by [Stephan Teodosescu](https://stephanteodosescu.com/).
 
-Users can update their votes as often as they'd like, but any new vote on the same title will overwrite the previous one, so it is one vote per title per user. 
+**How it Works**
+
+IMDb registered users can cast a vote (from 1 to 10) on every released title in the database. Individual votes are then aggregated and summarized as a single IMDb rating, visible on the title's main page. Released title means that the movie (or TV show) must have been shown publicly at least once (including festival screening). Users can update their votes as often as they'd like, but any new vote on the same title will overwrite the previous one, so it is one vote per title per user. 
 
 
 **Data**
@@ -488,5 +521,9 @@ This dashboard is built with R using the [Rmarkdown](https://rmarkdown.rstudio.c
 
 The input data for this IMDb Ratings Dashboard Tool can also be found in my [GitHub repository](https://github.com/steodose/imdb-ratings). The code to scrape IMDb's website (politely) and generate the dataset was borrowed from [Nazareno Andrade](https://github.com/nazareno/imdb-series#imdb-ratings-for-tvstreaming-series).
 
-For any questions or feedback, you can contact me on
+
+
+**Other**
+
+Inspiration for this app comes from [Jim Vallandingham's SeriesHeat project](https://vallandingham.me/seriesheat/#/?flip=1&id=tt0098904). For any questions or feedback, you can contact me on
 [Twitter](https://twitter.com/steodosescu).
