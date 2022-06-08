@@ -2,6 +2,8 @@
 
 This is the repository for my [IMDb Ratings Tool](https://steodosescu.shinyapps.io/IMDB-Ratings-Tool/). 
 
+![](https://raw.githubusercontent.com/steodose/imdb-ratings/master/IMDB%20Screenshot.png)
+
 * get_series_data.R: Poission regression model to predict and simulate the 2022 Men's FIFA World Cup
 * series_urls.csv: Data for intertional soccer matches dating back to 1872.
 * imdb_series.R: Fixtures and results for matches played in the 2022 FIFA World Cup
