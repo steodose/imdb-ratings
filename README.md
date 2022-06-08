@@ -7,7 +7,7 @@ This is the repository for my IMDB Ratings Dashboard Tool.
 * imdb_series.R: Fixtures and results for matches played in the 2022 FIFA World Cup
 * IMDB Dashboard.RMD: International soccer rankings producted from model coefficients.
 
-Run get_series_data.R. It will fetch ratings for every episode of the series in series_urls.csv and save the result in data/series_from_imdb.csv.
+Running get_series_data.R will fetch ratings for every episode of a given TV series in series_urls.csv and save the result in data/series_from_imdb.csv.
 
 
 A dataset featuring IMDb ratings for every episode of popular TV and streaming series is outputted with this code. The code to scrape IMDb's website (politely) and generate the dataset was borrowed from [Nazareno Andrade](https://github.com/nazareno/imdb-series#imdb-ratings-for-tvstreaming-series). The shows were curated from a list of series that I find interesting as well as work Professor Andrade has put together previously. The data dictionary for the variables included is as follows:
