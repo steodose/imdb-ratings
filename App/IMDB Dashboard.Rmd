@@ -28,6 +28,9 @@ color:white!important;
 
 </style>
 
+
+
+
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(shiny)
@@ -106,7 +109,7 @@ Inputs {.sidebar}
 
 ```
 
-TV series and ratings data for 1000+ shows in the IMDb database. Select a series above and see the ratings for each episode.
+TV series and ratings data for 1000+ shows in the IMDb database. Select a series above and see the consensus ratings for each episode.
 
 
 
@@ -248,7 +251,8 @@ Row
     })
 
  renderPlotly({
-     ggplotly(ggplot(heatmap_plot(), tooltip = "episode", aes(season_ep, season, fill = user_rating)) +
+   ggplotly(ggplot(heatmap_plot(), aes(season_ep, season, fill = user_rating, text =      paste("Ep: ", episode)))
+            +
      geom_tile() +
         # scale_fill_material("deep-orange", 
          #               labels = scales::percent_format()) +
@@ -265,7 +269,8 @@ Row
          y = "Season",
          subtitle = "Average user rating for each episode and season.",
          title = "IMDB User Ratings",
-         caption = "Data: IMDB.com | Plot: @steodosescu")
+         caption = "Data: IMDB.com | Plot: @steodosescu"),
+     tooltip = c("x","y","text","fill") #control ggplotly tooltip hovering
      )
  })
 ```
@@ -301,7 +306,7 @@ ggplotly(ggplot(boxplot(), aes(season, user_rating, group = season)) +
 
 ```
    
-### Best Rated Episodes
+### Top Rated Episodes
 
 ```{r}
 
@@ -375,13 +380,13 @@ render_gt(
 ```
 
 
-### Episodes Ranked
+### All Episodes
 
 ```{r}
 
 ## Order table by best to worst episode using Reactable
 
-# create function for Ratings Stars to include in the table
+# create function for Ratings Stars to include in the table (not using for now)
 
 rating_stars <- function(rating, max_rating = 10) {
   star_icon <- function(empty = FALSE) {
@@ -402,7 +407,7 @@ rating_stars <- function(rating, max_rating = 10) {
 episode_table <- reactive({
   imdb %>%
     rename(link = url) %>% 
-    select(series_name:user_votes, r10, r9, r8, r7, r6, r5, r4, r3, r2, r1) %>% 
+    select(series_name:user_votes) %>% 
     filter(series_name == input$seriesInput) %>%
       mutate(
       link = map(link, ~ htmltools::a(href = .x, "Episode Website")),
@@ -413,10 +418,7 @@ episode_table <- reactive({
 
 renderReactable({
         reactable(episode_table(),
-                  columnGroups = list(
-                      colGroup(name = "Proportion of Votes", 
-                               columns = c(9:18)),
-                  ),
+
                   showSortIcon = TRUE,
                   language = reactableLang(
                       searchPlaceholder = "Search for an episode..."),
@@ -426,63 +428,38 @@ renderReactable({
                                     minWidth = 120,
                                     align = "left"),
                       episode = colDef(name = "Episode",
+                                       minWidth = 160,
                                       align = "right",
-                                      style = color_scales(imbd, colors = my_color_pal),
+                                      style = list(borderRight = "2px solid #555"),
                                       format =  colFormat(digits = 0)),
                       series_ep = colDef(name = "Series Episode",
                                                    align = "right",
                                                    format =  colFormat(digits = 0)),
                       season = colDef(name = "Season",
                                                    align = "right",
-                                              style = list(borderRight = "2px solid #555"),
-                                              format =  colFormat(digits = 1)),
+                                              format =  colFormat(digits = 0)),
                       season_ep = colDef(name = "Season Episode",
                                                 align = "right",
-                                                format =  colFormat(digits = 1)),
-                      link = colDef(name = "Episode Link",
+                                                format =  colFormat(digits = 0)),
+                      link = colDef(name = "IMDB Link",
+                                    cell = function(value) {
+      htmltools::tags$a(
+         "Episode Link", href = value, target = "_blank")
+    },
                                      align = "right"),
-                      user_rating = colDef(name = "Rating",
+                  user_rating = colDef(name = "Rating",
                                             align = "right",
                                             style = color_scales(imdb, colors = paletteer::paletteer_d(
                                                 palette = "ggsci::amber_material"
-                                            )),
-                                            format =  colFormat(percent = TRUE)),
+                                            ))
+                                           ),
                       user_votes = colDef(name = "Votes",
                                                     align = "right",
-                                                    style = color_scales(imbd, paletteer::paletteer_d(
+                                                    format =  colFormat(digits = 0, separators = TRUE),
+                                                    style = color_scales(imdb, paletteer::paletteer_d(
                                                         palette = "ggsci::amber_material"
-                                                    )),
-                                                    format =  colFormat(percent = TRUE)),
-                      r10 = colDef(name = "R10",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r9 = colDef(name = "R9",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r8 = colDef(name = "R8",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r7 = colDef(name = "R7",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r6 = colDef(name = "R6",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r5 = colDef(name = "R5",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r4 = colDef(name = "R4",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r3 = colDef(name = "R3",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r2 = colDef(name = "R2",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
-                      r1 = colDef(name = "R1",
-                                            align = "center",
-                                            format =  colFormat(percent = TRUE)),
+                                                    ))
+                                          )
                       ),
                   pagination = FALSE,
                   compact = TRUE, 

@@ -5,9 +5,9 @@ account: steodosescu
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5953849
-bundleId: 5988026
+bundleId: 6103170
 url: https://steodosescu.shinyapps.io/IMDB-Ratings-Tool/
-when: 1654665583.70282
-lastSyncTime: 1654665583.70285
+when: 1657953855.45051
+lastSyncTime: 1657953855.45053
 asMultiple: FALSE
 asStatic: FALSE
