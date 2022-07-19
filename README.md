@@ -6,9 +6,9 @@ This is the repository for my [IMDb Ratings Tool](https://steodosescu.shinyapps.
 
 ## Data Files
 
-* get_series_data.R: Poission regression model to predict and simulate the 2022 Men's FIFA World Cup
-* series_urls.csv: Data for intertional soccer matches dating back to 1872.
-* imdb_series.R: Fixtures and results for matches played in the 2022 FIFA World Cup
+* get_series_data.R: Fetches ratings for every episode of the series specified in series_urls.csv and saves the result in data/series_from_imdb.csv
+* series_urls.csv: Text file with the series name and IMDb webpage id for that series.
+* imdb_series.R: Script to scrape individual imdb series webpages for episode and ratings information, which is them used in get_series_data.R
 * IMDB Dashboard.RMD: International soccer rankings producted from model coefficients.
 
 Running get_series_data.R will fetch ratings for every episode of a given TV series in series_urls.csv and save the result in data/series_from_imdb.csv.
