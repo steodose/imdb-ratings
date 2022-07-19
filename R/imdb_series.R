@@ -1,5 +1,7 @@
 ##### IMDB Episode Scraper #####
 
+# This script scrapes individual imdb series webpages for episode and ratings information, which is them used in get_series_data.R
+
 get_episode_ratings <- function(url){
     require("dplyr")
     require("tidyr")

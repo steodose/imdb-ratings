@@ -70,7 +70,7 @@ library(bslib)
 # load data in 'global' chunk so it can be shared by all users of the dashboard
 
 # Load imdb data from following GitHub url. Alternatively could scrape using rvest.
-url <- getURL("https://raw.githubusercontent.com/nazareno/imdb-series/master/data/series_from_imdb.csv")
+url <- getURL("https://raw.githubusercontent.com/steodose/imdb-ratings/master/data/series_from_imdb.csv")
 
 imdb <- read_csv(url)
 
